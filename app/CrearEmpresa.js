@@ -1,49 +1,59 @@
-// CrearEmpresa.js
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { firestore } from '../firebaseConfig'; // Asegúrate de ajustar la ruta según tu configuración
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { collection, addDoc } from 'firebase/firestore';
+import { useRouter } from 'expo-router';
+import { firestore, auth } from '../firebaseConfig';
 
 export default function CrearEmpresa() {
-  const [nombre, setNombre] = useState('');
-  const [ubicacion, setUbicacion] = useState('');
+  const [empresa, setEmpresa] = useState({
+    nombre: '',
+    descripcion: '',
+  });
 
-  const crearEmpresa = async () => {
-    if (nombre && ubicacion) {
+  const router = useRouter();
+  const user = auth.currentUser;
+
+  const handleCrearEmpresa = async () => {
+    if (!user) {
+      Alert.alert('Error', 'Debes estar autenticado para crear una empresa');
+      return;
+    }
+
+    if (empresa.nombre && empresa.descripcion) {
       try {
-        await addDoc(collection(firestore, 'Empresas'), {
-          nombre,
-          ubicacion,
-          horarios: [], // Inicialmente vacío
-          otrosDetalles: '',
-        });
+        const userUid = user.uid;
+        const docRef = await addDoc(collection(firestore, `users/${userUid}/empresas`), empresa);
         Alert.alert('Éxito', 'Empresa creada con éxito');
-        setNombre('');
-        setUbicacion('');
+        router.push({
+          pathname: '/AgregarHorario',
+          params: { userId: userUid, empresaId: docRef.id }
+        });
       } catch (error) {
         Alert.alert('Error', 'No se pudo crear la empresa');
         console.error('Error al crear la empresa:', error);
       }
     } else {
-      Alert.alert('Advertencia', 'Por favor, completa todos los campos');
+      Alert.alert('Advertencia', 'Por favor, complete todos los campos');
     }
   };
 
   return (
     <View style={styles.container}>
+      <Text>Nombre de la Empresa</Text>
       <TextInput
         style={styles.input}
-        placeholder="Nombre de la empresa"
-        value={nombre}
-        onChangeText={setNombre}
+        placeholder="Nombre"
+        value={empresa.nombre}
+        onChangeText={(text) => setEmpresa({ ...empresa, nombre: text })}
       />
+      <Text>Descripción</Text>
       <TextInput
         style={styles.input}
-        placeholder="Ubicación"
-        value={ubicacion}
-        onChangeText={setUbicacion}
+        placeholder="Descripción"
+        value={empresa.descripcion}
+        onChangeText={(text) => setEmpresa({ ...empresa, descripcion: text })}
       />
-      <Button title="Crear Empresa" onPress={crearEmpresa} />
+      <Button title="Crear Empresa" onPress={handleCrearEmpresa} />
     </View>
   );
 }
@@ -52,15 +62,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    padding: 20,
   },
   input: {
-    width: 300,
     height: 40,
     borderColor: 'gray',
     borderWidth: 1,
     marginBottom: 10,
-    padding: 10,
+    paddingHorizontal: 10,
   },
 });

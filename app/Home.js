@@ -1,14 +1,36 @@
 import 'setimmediate';
 import { AsyncStorage, Pressable} from 'react-native';
+import { useAuth } from './context/AuthProvider';
 import { View, Text, StyleSheet, Alert, Image, TextInput, Button } from 'react-native';
 import React, { useState } from 'react';
-import { Icon } from "react-native-vector-icons/FontAwesome";
 import { Calendar } from 'react-native-calendars';
 import { Feather } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
+import { getAuth, signOut } from 'firebase/auth';
 
 export default function Home({}) {
+  const { user } = useAuth();
+  const router = useRouter(); // Obtén el router
+
+  const handleSignOut = async () => {
+    const auth = getAuth();
+    try {
+      await signOut(auth);
+      router.push('/LogIn'); // Redirige a la pantalla de login
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      Alert.alert('Error', 'No se pudo cerrar sesión. Inténtalo de nuevo.');
+    }
+  };
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text>No autorizado</Text>
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -17,20 +39,37 @@ export default function Home({}) {
         <Ionicons name="notifications" size={24} color="white" style={styles.iconRight} />
       </View>
       <View>
-        <Text style={styles.welcome}>Bienvenido, usuario!</Text>
+        <Text style={styles.welcome}>Bienvenido, {user.email}!</Text>
       </View>
       <View style={styles.botonContainer}>
         <Link asChild href="/SacarTurno">
             <Pressable style={styles.sacarTurnoBoton}>
-            <Text style={{color:"white"}}>Sacar Turno</Text>
+            <Text style={{color:"white", fontWeight: "bold"}}>Sacar Turno</Text>
             </Pressable>
         </Link>
         <Link asChild href="/VerTurnos">
             <Pressable style={styles.verTurnoBoton}>
-                <Text>Ver Turnos</Text>
+                <Text style={{color:"black", fontWeight: "bold"}}>Ver Turnos</Text>
             </Pressable>
         </Link>
       </View>
+
+      <Text style={styles.welcome}>
+        No tienes una empresa? Creala!
+      </Text>
+      <Link asChild href="/CrearEmpresa">
+            <Pressable style={styles.crearEmpresaBoton}>
+                <Text style={{color:"black", fontWeight: "bold"}} >Crear Empresa</Text>
+            </Pressable>
+        </Link>
+        <Link asChild href="/VerEmpresas">
+            <Pressable style={styles.crearEmpresaBoton}>
+                <Text style={{color:"black", fontWeight: "bold"}} >Ver Empresas</Text>
+            </Pressable>
+        </Link>
+        <Pressable style={styles.signOutButton} onPress={handleSignOut}>
+        <Text style={{ color: "white", fontWeight: "bold" }}>Cerrar Sesión</Text>
+      </Pressable>
     </View>
   );
 };
@@ -100,5 +139,24 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     shadowOffset: {height: 3},
     shadowOpacity: "0.3",
+  },
+  crearEmpresaBoton: {
+    backgroundColor: "#7fc3db",
+    width: 250,
+    height: 50,
+    alignItems: "center",
+    borderRadius: 10,
+    justifyContent: "center",
+    alignSelf: "center",
+  },
+  signOutButton: {
+    backgroundColor: "red",
+    width: 250,
+    height: 50,
+    alignItems: "center",
+    borderRadius: 10,
+    justifyContent: "center",
+    marginTop: 20,
+    alignSelf: "center",
   }
 });

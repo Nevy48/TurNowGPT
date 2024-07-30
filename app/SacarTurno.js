@@ -26,7 +26,7 @@ export default function SacarTurno() {
         await addDoc(collection(firestore, 'turnos'), {
           ...userInfo,
           fecha: selectedDate,
-        });
+        }); 
         Alert.alert('Éxito', 'Turno guardado con éxito');
         console.log('Turno guardado con éxito:', {
           ...userInfo,
